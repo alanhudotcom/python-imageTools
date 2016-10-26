@@ -7,39 +7,73 @@ from PIL import Image
 import sys
 from ListImage import ListImage
 
+action_st_size = 0
+action_image_size = 1
+action_and_size = 2
 param = {
-    'bigSize': 20 * 1024,
-    'baseDir': os.path.abspath('.')
+    'st_size': 20 * 1024,
+    'image_size': 100,
+    'baseDir': os.path.abspath('.'),
+    'action': 0
 }
 
-def is_big_image(image):
+def is_big_st_size(image):
+    return os.stat(image).st_size >= param['st_size']
+
+def is_big_image_size(image):
     with Image.open(image) as im:
-        return os.stat(image).st_size >= param['bigSize']
+        (width, height) = im.size
+        return width >= param['image_size'] and height >= param['image_size']
+
+def is_and_big_size(image):
+    return is_big_st_size(image) and is_big_image_size(image)
 
 if __name__ == '__main__':
     
-    def paseBaseDirParm(args):
-        if len(args) >= 2:
-            param['baseDir'] = args[1]
-            print("from input baseDir: %s" % param['baseDir'])
+    paramDir = input('please enter baseDir: ')
+    if paramDir:
+        param['baseDir'] = paramDir
 
-    def parseBigSizePram(args):
-        if len(args) >= 3:
-            in_size = int(args[2])
-            param['bigSize'] = in_size * 1024
-            print("from input bigSize: %d" % in_size)
+    param['action'] = int(input('please enter action, 0: st_size, 1: image_size, 2: 0 and 1 >>> '))
+    if param['action'] == action_st_size:
+        try:
+            param['st_size'] = int(input('please enter st_size: ')) * 1024
+        except Exception as e:
+            pass
 
-    paseBaseDirParm(sys.argv)
-    parseBigSizePram(sys.argv)
+    if param['action'] == action_image_size:
+        try:
+            param['image_size'] = int(input('please enter image_size: '))
+        except Exception as e:
+            pass
+
+    if param['action'] == action_and_size:
+        try:
+            param['st_size'] = int(input('please enter st_size: ')) * 1024
+        except Exception as e:
+            pass
+        
+        try:
+            param['image_size'] = int(input('please enter image_size: '))
+        except Exception as e:
+            pass
     
-    print('===params baseDir: %s, bigSize:%d' % (param['baseDir'], param['bigSize']/1024))
+    print('===params baseDir: %s, action:%d, st_size:%d, image_size:%d' % (param['baseDir'], param['action'], param['st_size']/1024, param['image_size']))
     listImage = ListImage(param['baseDir'])
 
     imageFiles = listImage.images()
 
-    bigSizeFiles = list(filter(is_big_image, imageFiles))
+    if param['action'] == action_st_size:
+        imageFiles = list(filter(is_big_st_size, imageFiles))
 
-    print('===jpg or webp %d files ------------------------->' % len(bigSizeFiles))
-    print(bigSizeFiles)
+    elif param['action'] == action_image_size:
+        imageFiles = list(filter(is_big_image_size, imageFiles))
+
+    else:
+        imageFiles = list(filter(is_and_big_size, imageFiles))
+
+
+    print('===jpg or webp %d files ------------------------->' % len(imageFiles))
+    print(imageFiles)
 
 
